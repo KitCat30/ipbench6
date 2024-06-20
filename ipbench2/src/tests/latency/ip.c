@@ -15,7 +15,7 @@ create_addr(char *hostname, uint16_t port, struct sockaddr_in *addr)
 	}
 
 	memset(addr, 0, sizeof(struct sockaddr_in));
-	addr->sin_family = PF_INET;
+	addr->sin_family = PF_INET6;
 	addr->sin_addr = *((struct in_addr *) he->h_addr);
 	assert(addr->sin_addr.s_addr != INADDR_NONE);
 	addr->sin_port = htons(port);
@@ -36,7 +36,7 @@ int tcp_setup_socket(char *hostname, int port, char *args)
 
 	dbprintf("Socket type is TCP.\n");
 
-	s = socket(PF_INET, SOCK_STREAM, 0);
+	s = socket(PF_INET6, SOCK_STREAM, 0);
 	if (s == -1) {
 		dbprintf("Can not create socket (%s).\n", strerror(errno));
 		return -1;
@@ -61,7 +61,7 @@ int udp_setup_socket(char *hostname, int port, char *args)
 
 	dbprintf("Socket type is UDP.\n");
 
-	s = socket(PF_INET, SOCK_DGRAM, 0);
+	s = socket(PF_INET6, SOCK_DGRAM, 0);
 	if (s == -1) {
 		dbprintf("Can not create socket (%s).\n", strerror(errno));
 		return -1;

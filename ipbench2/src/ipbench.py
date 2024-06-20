@@ -127,7 +127,7 @@ class IpbenchTestClient:
                 " | port " + repr(self.port) + " | ")
 
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             try:
                 self.socket.connect((self.hostname, self.port))
             except OSError:
@@ -142,7 +142,7 @@ class IpbenchTestClient:
             if (OPTIONS.reset):
                 self.send_command("ABORT")
                 # the connection should have closed; re-open
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
                 self.socket.connect((self.hostname, self.port))
                 status = self.parse_return_code()
                 if (status["code"] != 100):
