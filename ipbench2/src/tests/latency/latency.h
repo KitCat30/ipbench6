@@ -20,6 +20,9 @@
 # endif
 #endif
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 /* According to RFC1700, this is unassigned, so it should be as good as any */
 #define ETH_P_IPBENCH 0x6008
 extern short protocol;

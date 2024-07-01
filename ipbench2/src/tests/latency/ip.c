@@ -4,23 +4,45 @@
 static int s;
 
 static int
-create_addr(char *hostname, uint16_t port, struct sockaddr_in *addr)
+create_addr(char *hostname, uint16_t port, struct sockaddr_in6 *addr)
 {
-	struct hostent *he;
-	extern int h_errno;
+	struct addrinfo hints, *res, *p;
+	int status;
 
-	if ((he = gethostbyname(hostname)) == NULL) {
-		dbprintf("gethostbyname error %s\n", hstrerror(h_errno));
-		return -1;
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_DGRAM;
+
+	char port_str[6];
+	sprintf(port_str, "%d", port);
+
+	if ((status = getaddrinfo(hostname, port_str, &hints, &res)) != 0){
+	    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+	    return -1;
 	}
 
-	memset(addr, 0, sizeof(struct sockaddr_in));
-	addr->sin_family = PF_INET6;
-	addr->sin_addr = *((struct in_addr *) he->h_addr);
-	assert(addr->sin_addr.s_addr != INADDR_NONE);
-	addr->sin_port = htons(port);
-	assert(addr->sin_port != 0);
+	for (p = res; p != NULL; p = p->ai_next){
+	    if((s = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
+	        perror("socket");
+		continue;
+	    }
 
+	    if(connect(s, p->ai_addr, p->ai_addrlen) == -1){
+		close(s);
+		perror("connect");
+		continue;
+	    }
+	    break;
+	}
+
+	if (p == NULL){
+	    fprintf(stderr, "Failed to connect\n");
+	    return -1;
+	}
+
+	memcpy(addr, p->ai_addr, p->ai_addrlen);
+
+	freeaddrinfo(res);
 	return 0;
 }
 
@@ -28,7 +50,7 @@ create_addr(char *hostname, uint16_t port, struct sockaddr_in *addr)
 int tcp_setup_socket(char *hostname, int port, char *args)
 {
 	int c;
-	struct sockaddr_in addr;
+	struct sockaddr_in6 addr;
 	if (create_addr(hostname, port, &addr) == -1) {
 		dbprintf("Can not contact target!\n");
 		return -1;
@@ -36,13 +58,13 @@ int tcp_setup_socket(char *hostname, int port, char *args)
 
 	dbprintf("Socket type is TCP.\n");
 
-	s = socket(PF_INET6, SOCK_STREAM, 0);
+	s = socket(AF_INET6, SOCK_STREAM, 0);
 	if (s == -1) {
 		dbprintf("Can not create socket (%s).\n", strerror(errno));
 		return -1;
 	}
 
-	c = connect(s, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+	c = connect(s, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6));
 	if (c != 0) {
 		dbprintf("Can not connect (%s).\n", strerror(errno));
 		return -1;
@@ -53,7 +75,7 @@ int tcp_setup_socket(char *hostname, int port, char *args)
 int udp_setup_socket(char *hostname, int port, char *args)
 {
 	int c;
-	struct sockaddr_in addr;
+	struct sockaddr_in6 addr;
 	if (create_addr(hostname, port, &addr) == -1) {
 		dbprintf("Can not contact target!\n");
 		return -1;
@@ -61,13 +83,13 @@ int udp_setup_socket(char *hostname, int port, char *args)
 
 	dbprintf("Socket type is UDP.\n");
 
-	s = socket(PF_INET6, SOCK_DGRAM, 0);
+	s = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (s == -1) {
 		dbprintf("Can not create socket (%s).\n", strerror(errno));
 		return -1;
 	}
 
-	c = connect(s, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+	c = connect(s, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6));
 	if (c != 0) {
 		dbprintf("Can not connect (%s).\n", strerror(errno));
 		return -1;

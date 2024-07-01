@@ -127,9 +127,11 @@ class IpbenchTestClient:
                 " | port " + repr(self.port) + " | ")
 
         try:
-            self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            addrinfo = socket.getaddrinfo(self.hostname, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            af, socktype, proto, canonname, sa = addrinfo[0]
+            self.socket = socket.socket(af, socktype, proto)
             try:
-                self.socket.connect((self.hostname, self.port))
+                self.socket.connect(sa)
             except OSError:
                 sys.stderr.write(f"Can't connect to {self.hostname} on port {repr(self.port)}"
                                  + " ... invalid host or port?\n")
@@ -142,8 +144,8 @@ class IpbenchTestClient:
             if (OPTIONS.reset):
                 self.send_command("ABORT")
                 # the connection should have closed; re-open
-                self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-                self.socket.connect((self.hostname, self.port))
+                self.socket = socket.socket(af, socktype, proto)
+                self.socket.connect(sa)
                 status = self.parse_return_code()
                 if (status["code"] != 100):
                     raise IpBenchError("Invalid Version Flag")
